@@ -1,5 +1,16 @@
 #lang racket
 
+;; Max-spacing k-clustering: maximize summ of distances between separated points
+;;  Each point in separate cluster
+;;  Repeat until k clusters:
+;;     - let (p, q) = closest pair of separated points
+;;       (determines the current spacing)
+;;     - merge the clusters containing (p, q) into single cluster
+
+;; answer: 106
+
+
+
 (require racket/vector)
 (require racket/pretty)
 (require data/heap)
@@ -126,13 +137,4 @@
 		[(nodes clusters cl-num) (k-clusterize edge-heap node-num)]
 		[(sum nv) (count-distance edge-hash clusters)])
 sum))
-
-;; answer: 106
-
-;; Max-spacing k-clustering: maximize summ of distances between separated points
-;;  Each point in separate cluster
-;;  Repeat until k clusters:
-;;     - let (p, q) = closest pair of separated points
-;;       (determines the current spacing)
-;;     - merge the clusters containing (p, q) into single cluster
 

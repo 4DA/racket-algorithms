@@ -62,24 +62,36 @@
 
 ; each nodes is in it's own cluster
 (define (init-clusters node-num)
-  (for/fold ([clusters (hash)]) ([x (in-range 1 (+ node-num 1))])
-    (hash-set clusters x (cluster x (set x)))))
+  (make-immutable-hash 
+   (for/list ([x (in-range 1 (+ node-num 1))])
+     (cons x (cluster x (set x)))
+     ))
+
+
+  ;; (for/fold ([clusters (hash)]) ([x (in-range 1 (+ node-num 1))])
+  ;;   (hash-set clusters x (cluster x (set x))))
+)
 
 ;; binary heap custom stream
-(define-struct hstream (v)
-  #:methods gen:stream
-  [(define (stream-empty? st)
-     (eq? (heap-count (hstream-v st)) 0))
-   (define (stream-first st)
-     (heap-min (hstream-v st)))
-   (define (stream-rest st)
-     (begin (heap-remove-min! (hstream-v st))
-   	    (hstream (hstream-v st))))])
+;; (define-struct hstream (v)
+;;   #:methods gen:stream
+;;   [(define (stream-empty? st)
+;;      (eq? (heap-count (hstream-v st)) 0))
+;;    (define (stream-first st)
+;;      (heap-min (hstream-v st)))
+;;    (define (stream-rest st)
+;;      (begin (heap-remove-min! (hstream-v st))
+;;    	    (hstream (hstream-v st))))])
+
+(define (check-set-cluster clusters clid)
+  (if (hash-has-key? clusters clid) 
+      (hash-ref clusters clid)
+      (cluster clid (set clid))))
 
 ;; return union of two clusters and update corresponding nodes
-(define (union-clusters cls1 cls2 nodes clusters)
-  (let* ([set1 (cluster-nodes cls1)] [set2 (cluster-nodes cls2)]
-	 [cl1 (cluster-id cls1)]     [cl2 (cluster-id cls2)]
+(define (union-clusters cl1 cl2 nodes clusters)
+  (let* ([cls1 (hash-ref clusters cl1)] [cls2 (hash-ref clusters cl2)]
+	 [set1 (cluster-nodes cls1)] [set2 (cluster-nodes cls2)]
 	 [new-set (set-union set1 set2)]
 	 [new-cluster (cluster (cluster-id cls1) new-set)]
 	 [new-nodes (for/fold ([new-n nodes]) ([n new-set])
@@ -124,19 +136,19 @@
 	     [cl2  (hash-ref nodes n2)])
 
 	(if (not (eq? cl1 cl2))
-	    (begin 
-	      (union-clusters (hash-ref clusters cl1) 
-			      (hash-ref clusters cl2) nodes clusters))
+	    (union-clusters cl1 cl2 
+			    nodes clusters)
 	      (values nodes clusters cl-num))))))
 
 (define (count-cl-dist c1 c2 vis edges min-dist)
   (for*/fold ([S min-dist] [new-vis vis]) 
       ([x (cluster-nodes c1)] [y (cluster-nodes c2)])
-    (if (hash-has-key? new-vis (set x y))
-	(values S new-vis)
-	(values (let ([cd (edge-dist (hash-ref edges (set x y)))])
-		  (if (< cd S) cd S)) 
-		(hash-set new-vis (set x y) #t)))))
+    (let ([sp (set x y)])
+      (if (hash-has-key? new-vis sp)
+	  (values S new-vis)
+	  (values (let ([cd (edge-dist (hash-ref edges sp))])
+		    (if (< cd S) cd S)) 
+		  (hash-set new-vis sp #t))))))
 
 (define (count-distance edges clusters)
   (for*/fold ([min-dist 9999999] 
@@ -152,4 +164,6 @@
 		[(sum nv) (count-distance edge-hash clusters)]
 		)
     sum))
+
+  
 

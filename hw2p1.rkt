@@ -65,12 +65,7 @@
   (make-immutable-hash 
    (for/list ([x (in-range 1 (+ node-num 1))])
      (cons x (cluster x (set x)))
-     ))
-
-
-  ;; (for/fold ([clusters (hash)]) ([x (in-range 1 (+ node-num 1))])
-  ;;   (hash-set clusters x (cluster x (set x))))
-)
+     )))
 
 ;; binary heap custom stream
 ;; (define-struct hstream (v)
@@ -89,7 +84,7 @@
       (cluster clid (set clid))))
 
 ;; return union of two clusters and update corresponding nodes
-(define (union-clusters cl1 cl2 nodes clusters)
+(define (union-clusters cl1 cl2 nodes clusters cl-num)
   (let* ([cls1 (hash-ref clusters cl1)] [cls2 (hash-ref clusters cl2)]
 	 [set1 (cluster-nodes cls1)] [set2 (cluster-nodes cls2)]
 	 [new-set (set-union set1 set2)]
@@ -98,7 +93,7 @@
 		      (hash-set new-n n (cluster-id new-cluster)))]
 	 [clm2 (hash-remove clusters cl2)]
 	 [new-clusters (hash-set clm2 cl1 new-cluster)])
-    (values new-nodes new-clusters (hash-count new-clusters))))
+    (values new-nodes new-clusters (- cl-num 1))))
 
 ;; cluster union unit tests
 ;; (define (test-cl-union)
@@ -137,7 +132,7 @@
 
 	(if (not (eq? cl1 cl2))
 	    (union-clusters cl1 cl2 
-			    nodes clusters)
+			    nodes clusters cl-num)
 	      (values nodes clusters cl-num))))))
 
 (define (count-cl-dist c1 c2 vis edges min-dist)

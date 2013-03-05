@@ -10,14 +10,10 @@
 
 (define (pop! hs)
   (let ([s (hstack-s hs)] [h (hstack-h hs)])
-    ;; if (empty? s)
-    ;; 	'()
-    (begin
-      (let ([hd (car s)])
-	(hash-remove! h (car s))
-	(set-hstack-s! hs (cdr s))
-	;; (printf "poping hd: ~a \n" hd)
-	hd))))
+    (let ([hd (car s)])
+      (hash-remove! h (car s))
+      (set-hstack-s! hs (cdr s))
+      hd)))
 
 (define (push! hs v)
   (let ([s (hstack-s hs)] [h (hstack-h hs)])
@@ -75,7 +71,6 @@
 
     (for ([wid (in-list (vert-adjs v))])
       (let ([w (vector-ref verts wid)])
-	;; (printf "checking w: ~a\n" wid)
 	(if (empty? (vert-index w))
 	    ;; Successor w has not yet been visited; recurse on it
 	    (begin
@@ -98,8 +93,7 @@
     (when (empty? (vert-index v))
       (strong-connect v)))
 
-  scc-heap
-  )
+  scc-heap)
 
 (define (print-5-sccs sccs)
   (printf "sf\n")
@@ -111,24 +105,10 @@
 
 (define (run)
   ;; (let ([verts (read-verts "SCC.txt")])
-;; answers should be 4,3,3,1,0
   (let ([verts (read-verts "scct1.txt")])  
     (print-5-sccs (find-sccs verts))))
 
-
-;; (define (run1000)
-;;   ;; (let ([verts (read-verts "SCC.txt")])
-;; ;; answers should be 4,3,3,1,0
-;;   (let ([verts (read-verts "scct1.txt")])  
-;;     (for ([x (in-range 1000)])
-;;       (find-sccs verts))
-
-;;     (print-5-sccs 
-;;      (find-sccs verts))))
-
 (define (run1000)
-  ;; (let ([verts (read-verts "SCC.txt")])
-;; answers should be 4,3,3,1,0
   (for ([x (in-range 5000)])
     (let ([verts (read-verts "scct1.txt")])  
       (find-sccs verts)))

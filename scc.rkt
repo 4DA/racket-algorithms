@@ -11,7 +11,7 @@
 (define (pop! hs)
   (let ([s (hstack-s hs)] [h (hstack-h hs)])
     (let ([hd (car s)])
-      (hash-remove! h (car s))
+      (hash-remove! h hd)
       (set-hstack-s! hs (cdr s))
       hd)))
 
@@ -37,9 +37,7 @@
     (set-vert-index! (vector-ref vec 0) 0)
     vec))
 
-(define (read-verts file-name)
-  ;; (define verts-num 875714)
-  (define verts-num 50)
+(define (read-verts file-name verts-num)
   (let* ([in (open-input-file file-name)]
 	 [verts (init-vert-vector verts-num)])
     (let loop () 
@@ -56,11 +54,26 @@
   (define index 0)
   (define S (hstack '() (make-hash)))
   (define scc-heap (make-heap 
-		    (lambda (s1 s2) (>= (scc-size s1) 
+		    (lambda (s1 s2) (<= (scc-size s1) 
 					(scc-size s2)))))
+  (define min-scc-size 1)
+
+  (define (scc-heap-add! new-scc)
+    (when (or (< (heap-count scc-heap) 5)
+	      (and (>= (heap-count scc-heap) 5)
+		   (< min-scc-size (scc-size new-scc))))
+      (heap-add! scc-heap new-scc)
+
+      (when (> (heap-count scc-heap) 5)
+	;; (printf "popping ~a from heap\n" (scc-size (heap-min scc-heap)))
+	(heap-remove-min! scc-heap))
+
+      (set! min-scc-size (scc-size (heap-min scc-heap)))
+      ;; (printf "added\n")
+      ))
 
 
-  (define (strong-connect v)
+  (define (strong-connect v depth)
     (define vid (vert-id v))
 
     ;; Set the depth index for v to the smallest unused index
@@ -74,29 +87,45 @@
 	(if (empty? (vert-index w))
 	    ;; Successor w has not yet been visited; recurse on it
 	    (begin
-	      (strong-connect w)
+	      (strong-connect w (+ 1 depth))
 	      (set-vert-lowlink! v (min (vert-lowlink v) (vert-lowlink w))))
 	    (when (contains? S (vert-id w))
 	      ;; Successor w is in stack S and hence in the current SCC
 	      (set-vert-lowlink! v (min (vert-lowlink v) (vert-index w)))))))
 
     (when (eq? (vert-lowlink v) (vert-index v))
-      (heap-add! scc-heap 
-		 (let loop ([vlist (list vid)] [sz 1])
-		   (let ([wid (pop! S)])
-		     (if (eq? vid wid)
-			 (scc vlist sz)
-			 (loop (append vlist (list wid)) 
-			       (+ sz 1))))))))
 
-  (for ([v (in-vector verts)])
+      (scc-heap-add! 
+    		 (let ([newscc 
+    			(let loop (;; [vlist (list vid)]
+				   [sz 1])
+    			  (let ([wid (pop! S)])
+    			    (if (eq? vid wid)
+    				(scc '() sz)
+    				(loop 
+				      ;; (append vlist (list wid)) 
+    				      (+ sz 1)))))])
+    		   newscc
+    		   )))
+
+    )
+
+  (for ([v (in-vector verts)] [num (in-range 700000)])
+      ;; (printf "vertex ~a\n" num)
     (when (empty? (vert-index v))
-      (strong-connect v)))
+
+      (strong-connect v 0)))
 
   scc-heap)
 
+;; correct answer for SCC:
+;; scc 0 size: 211
+;; scc 1 size: 313
+;; scc 2 size: 459
+;; scc 3 size: 968
+;; scc 4 size: 434821
+
 (define (print-5-sccs sccs)
-  (printf "sf\n")
   (for ([n (in-range 5)]
 	#:break (eq? (heap-count sccs) 0))
     (printf "scc ~a size: ~a\n" n (scc-size (heap-min sccs)))
@@ -104,14 +133,10 @@
 
 
 (define (run)
-  ;; (let ([verts (read-verts "SCC.txt")])
-  (let ([verts (read-verts "scct1.txt")])  
+  (let ([verts (read-verts "/home/dc/code/algs/SCC.txt" 875714)])
+  ;; (let ([verts (read-verts "scct1.txt" 50)])  
+  ;; (let ([verts (read-verts "scc2.txt" 11)])  
+    (printf "vertex array loaded\n")
     (print-5-sccs (find-sccs verts))))
 
-(define (run1000)
-  (for ([x (in-range 5000)])
-    (let ([verts (read-verts "scct1.txt")])  
-      (find-sccs verts)))
-  (let ([verts (read-verts "scct1.txt")])  
-    (print-5-sccs (find-sccs verts))))
-
+(time (run))

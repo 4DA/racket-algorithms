@@ -15,13 +15,6 @@
    (+ (vec2-x v1) (vec2-x v2) (vec2-x v3))
    (+ (vec2-y v1) (vec2-y v2) (vec2-y v3))))
 
-(define (draw-points pts bmp-dc)
-  (send bmp-dc set-pen (make-pen 
-		    #:color (send the-color-database find-color "Blue")
-		    #:width 3))
-  (for ([p pts])
-      (send bmp-dc draw-point (vec2-x p) (vec2-y p))))
-
 (define (draw-vecs v1 v2 v3 bmp-dc)
 
   (match-let ([(vec2 v1x v1y) v1]
